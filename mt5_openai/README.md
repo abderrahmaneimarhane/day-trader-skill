@@ -70,3 +70,85 @@ swaps, and trading sessions vary by Exness account and instrument. Discover
 them from the connected terminal; do not assume names such as US30 or BTCUSD
 are universal. The first release does not claim to support every asset class
 on every Exness account.
+
+
+## Android + Termux research mode (semi-automatic)
+
+This mode is separate from the Windows MT5 adapter. It is designed for an
+Android phone and does **not** connect to the Exness MT5 mobile app or submit
+broker orders.
+
+### What it does
+
+- Fetches indicative OHLC history through Yahoo Finance's chart endpoint.
+- Uses the same deterministic EMA/RSI/ATR research baseline.
+- Adds H1 and D1 trend context and optional OpenAI market-context analysis.
+- Saves trade proposals and displays them in a local, loopback-only dashboard.
+- Lets the user approve a proposal for **manual review** or reject it.
+- Does not calculate broker lot size, because Yahoo prices are not Exness
+  executable quotes and the Android app does not expose broker contract data
+  to this Python process.
+
+### Install on Android
+
+1. Install Termux from the official F-Droid or Termux GitHub source. Do not mix
+   APKs from different signing sources. The official project notes Android may
+   stop background processes, so this is not a reliable always-on server.
+2. Open Termux and run:
+
+   ```sh
+   pkg update && pkg upgrade
+   pkg install python git
+   git clone --branch v2/openai-exness-mt5 https://github.com/abderrahmaneimarhane/day-trader-skill.git
+   cd day-trader-skill
+   python -m venv .venv
+   source .venv/bin/activate
+   pip install -r mt5_openai/requirements.txt
+   cp mt5_openai/android_config.example.json mt5_openai/android_config.json
+   ```
+
+3. Set the OpenAI key in the current Termux session (do not put it in the
+   config file or commit it):
+
+   ```sh
+   export OPENAI_API_KEY="your-key"
+   ```
+
+4. Run one scan:
+
+   ```sh
+   python -m mt5_openai.android_agent --config mt5_openai/android_config.json
+   ```
+
+5. Start the dashboard in a second Termux session:
+
+   ```sh
+   cd day-trader-skill
+   source .venv/bin/activate
+   python -m mt5_openai.android_dashboard
+   ```
+
+6. Open `http://127.0.0.1:8765` in the Android browser.
+
+### Manual approval workflow
+
+A dashboard approval only changes a proposal to
+`approved_for_manual_review`. It never submits an order. Before entering
+anything manually in Exness MT5, independently verify the exact instrument,
+current executable bid/ask, spread, contract size, margin, minimum volume,
+stop distance, and expected loss. If the smallest allowed volume exceeds the
+risk budget, do not trade.
+
+### Data and operational limitations
+
+Yahoo Finance symbols are research proxies, not a guarantee of matching
+Exness instruments. Examples such as `GC=F`, `^DJI`, and `^IXIC` represent
+gold futures, Dow Jones index data, and Nasdaq Composite data respectively;
+they are not equivalent to every broker's XAUUSD, US30, or NAS100 CFD.
+Availability, delay, history, and rate limits can change. Validate every
+symbol and candle timestamp. Do not treat the dashboard as a live broker
+terminal. Android may suspend Termux in the background; keep it foregrounded
+for scans and do not depend on it for unattended monitoring.
+
+This Android mode is research and manual trade preparation, not a validated
+profitable strategy or financial advice.
