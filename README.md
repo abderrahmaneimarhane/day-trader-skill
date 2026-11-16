@@ -218,3 +218,8 @@ tests/              unittest suite + offline fixtures
 ```
 
 MIT. Made by [Jake Schincariol](https://opusjake.ai).
+
+
+### Android / Termux research mode
+
+For Android signal scanning and a local manual-review dashboard, see [`mt5_openai/README.md`](mt5_openai/README.md#android--termux-research-mode-semi-automatic). This mode is separate from desktop MT5, uses indicative Yahoo Finance data, and never submits broker orders.
