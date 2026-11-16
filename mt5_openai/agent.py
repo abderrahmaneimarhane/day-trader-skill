@@ -38,6 +38,22 @@ def _daily_loss_guard(mt5, account, state_path):
     return max_seen
 
 
+def _higher_timeframe_context(adapter, symbol, timeframes):
+    context = {}
+    for timeframe in timeframes:
+        bars = adapter.closed_bars(symbol, timeframe, 60)
+        closes = [float(row["close"]) for row in bars]
+        sma20 = sum(closes[-20:]) / 20
+        sma50 = sum(closes[-50:]) / 50
+        context[timeframe] = {
+            "last_closed_close": closes[-1],
+            "sma20": sma20,
+            "sma50": sma50,
+            "trend": "bullish" if sma20 > sma50 else "bearish" if sma20 < sma50 else "neutral"
+        }
+    return context
+
+
 def run(config):
     adapter = MT5Adapter(config.get("terminal_path"))
     mt5 = adapter.mt5
@@ -82,7 +98,7 @@ def run(config):
                 entry = float(tick.ask if side == "buy" else tick.bid)
                 snapshot = {"symbol": symbol, "timeframe": config.get("timeframe", "M15"),
                             "closed_bar_count": len(rates), "last_closed_close": float(rates[-1]["close"]),
-                            "spread_points": spread, "candidate": candidate}
+                            "spread_points": spread, "candidate": candidate,\n                            "higher_timeframe_context": _higher_timeframe_context(\n                                adapter, symbol, config.get("context_timeframes", ["H1", "H4"]))}
                 context = analyse_market(snapshot, config.get("model", "gpt-4.1-mini"))
                 if context["confidence"] < float(config.get("ai_min_confidence", 0.65)):
                     results.append({"symbol": symbol, "status": "AI_FILTER",
