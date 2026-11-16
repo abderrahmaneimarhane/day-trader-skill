@@ -26,6 +26,9 @@ def size_position(mt5, symbol, order_type, entry, stop, equity,
         return SizeDecision(False, 0.0, 0.0, 0.0, "Symbol data unavailable")
     if not info.visible and not mt5.symbol_select(symbol, True):
         return SizeDecision(False, 0.0, 0.0, 0.0, "Could not select symbol")
+    info = mt5.symbol_info(symbol)
+    if info is None:
+        return SizeDecision(False, 0.0, 0.0, 0.0, "Symbol metadata unavailable after selection")
     if entry <= 0 or stop <= 0 or entry == stop:
         return SizeDecision(False, 0.0, 0.0, 0.0, "Invalid entry or stop")
     if order_type == mt5.ORDER_TYPE_BUY and stop >= entry:
