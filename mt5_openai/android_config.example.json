@@ -1,0 +1,30 @@
+{
+  "mode": "semi_automatic_manual_execution",
+  "live_orders_enabled": false,
+  "state_path": "mt5_openai/android_state.json",
+  "model": "gpt-4.1-mini",
+  "interval": "15m",
+  "history_range": "30d",
+  "reference_equity": 10.0,
+  "risk_per_trade": 0.02,
+  "ai_min_confidence": 0.65,
+  "markets": {
+    "EURUSD": {"symbol": "EURUSD=X"},
+    "GBPUSD": {"symbol": "GBPUSD=X"},
+    "USDJPY": {"symbol": "JPY=X"},
+    "Gold futures (indicative)": {"symbol": "GC=F"},
+    "Dow Jones index (indicative)": {"symbol": "^DJI"},
+    "Nasdaq Composite (indicative)": {"symbol": "^IXIC"},
+    "Bitcoin": {"symbol": "BTC-USD"},
+    "Apple": {"symbol": "AAPL"},
+    "Tesla": {"symbol": "TSLA"}
+  },
+  "context": [
+    {"name": "H1", "interval": "1h", "range": "3mo"},
+    {"name": "D1", "interval": "1d", "range": "1y"}
+  ],
+  "strategy": {
+    "ema_fast": 20, "ema_slow": 50, "rsi_period": 14, "atr_period": 14,
+    "stop_atr_multiple": 1.5, "reward_risk": 2.0
+  }
+}
