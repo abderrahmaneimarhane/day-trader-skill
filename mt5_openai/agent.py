@@ -2,6 +2,7 @@
 import argparse
 import datetime as dt
 import json
+import os
 from .mt5_adapter import MT5Adapter
 from .strategy import evaluate
 from .ai_analyst import analyse_market
@@ -9,7 +10,7 @@ from .risk import size_position
 from .execution import submit_market_order, ExecutionBlocked
 
 
-def _today_realized_loss(mt5):
+def _daily_loss_guard(mt5, account, state_path):
     now = dt.datetime.now(dt.timezone.utc)
     start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     deals = mt5.history_deals_get(start, now)
@@ -17,7 +18,24 @@ def _today_realized_loss(mt5):
         raise RuntimeError("Cannot read today's deal history; fail closed")
     net = sum(float(d.profit) + float(d.commission) + float(d.swap) +
               float(getattr(d, "fee", 0.0)) for d in deals)
-    return max(0.0, -net)
+    day_start_balance = float(account.balance) - net
+    drawdown = max(0.0, day_start_balance - float(account.equity))
+    day_key = now.date().isoformat()
+    state = {}
+    if os.path.exists(state_path):
+        with open(state_path, encoding="utf-8") as fh:
+            state = json.load(fh)
+    if state.get("date") != day_key or state.get("server") != str(account.server) or state.get("login") != int(account.login):
+        state = {"date": day_key, "server": str(account.server),
+                 "login": int(account.login), "max_daily_loss_seen": 0.0}
+    max_seen = max(float(state.get("max_daily_loss_seen", 0.0)), drawdown)
+    state["max_daily_loss_seen"] = max_seen
+    os.makedirs(os.path.dirname(state_path) or ".", exist_ok=True)
+    temp_path = state_path + ".tmp"
+    with open(temp_path, "w", encoding="utf-8") as fh:
+        json.dump(state, fh, indent=2)
+    os.replace(temp_path, state_path)
+    return max_seen
 
 
 def run(config):
@@ -31,10 +49,11 @@ def run(config):
         positions = mt5.positions_get()
         if positions is None:
             raise RuntimeError("Cannot read open positions; fail closed")
-        daily_loss = _today_realized_loss(mt5)
+        daily_loss = _daily_loss_guard(mt5, account, config.get("state_path", "mt5_openai/state.json"))
+        active_count = len(positions)
         for symbol in config.get("symbols", []):
             try:
-                if len(positions) >= int(config.get("max_open_positions", 1)):
+                if active_count >= int(config.get("max_open_positions", 1)):
                     results.append({"symbol": symbol, "status": "SKIP",
                                     "reason": "Maximum open positions reached"})
                     continue
@@ -88,6 +107,8 @@ def run(config):
                 results.append({"symbol": symbol, "status": outcome["status"],
                                 "signal": candidate, "ai": context,
                                 "risk": sizing.__dict__, "execution": outcome})
+                if outcome["status"] in ("PAPER_PREVIEW", "SUBMITTED"):
+                    active_count += 1
             except ExecutionBlocked as exc:
                 results.append({"symbol": symbol, "status": "EXECUTION_BLOCK",
                                 "reason": str(exc)})
