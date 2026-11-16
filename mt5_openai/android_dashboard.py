@@ -19,40 +19,75 @@ button{padding:12px 16px;border:0;border-radius:9px;font-weight:700;margin:8px 8
 </style><main><h1>AI Trader</h1>
 <p class="muted">Android signal review · Manual execution only · No broker connection</p>
 <p class="warn">Approval only marks a proposal for manual review. It never places an order.</p>
-<div id="items">Loading proposals…</div>
+<div id="items">JavaScript started. Checking proposals…</div>
 <script>
-async function decide(id,decision){
- const r=await fetch('/api/decision/'+encodeURIComponent(id),{
-  method:'POST',headers:{'Content-Type':'application/json'},
-  body:JSON.stringify({decision})});
- const data=await r.json(); if(!r.ok){alert(data.error||'Request failed');return;}
+(function(){
+ var root = document.getElementById('items');
+ function esc(value){
+  return String(value === null || value === undefined ? '' : value)
+   .replace(/[&<>"']/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+   });
+ }
+ function showError(message){root.textContent='Dashboard error: '+message;}
+ function load(){
+  var request = new XMLHttpRequest();
+  request.open('GET','/api/proposals',true);
+  request.setRequestHeader('Accept','application/json');
+  request.onload = function(){
+   if(request.status < 200 || request.status >= 300){
+    showError('Proposal endpoint returned HTTP '+request.status); return;
+   }
+   try{
+    var data = JSON.parse(request.responseText);
+    if(!data || !Array.isArray(data.proposals)){
+     showError('Unexpected response format from /api/proposals'); return;
+    }
+    if(data.proposals.length === 0){
+     root.innerHTML='<p class="muted">No proposals yet. Run the scanner in Termux.</p>'; return;
+    }
+    var output = '';
+    data.proposals.forEach(function(p){
+     output += '<section class="card"><div class="row"><strong>'+esc(p.market)+' · '+esc(p.side).toUpperCase()+'</strong><span>'+esc(p.status)+'</span></div>';
+     output += '<p class="muted">'+esc(p.timeframe)+' · '+esc(p.signal_bar_time)+'</p>';
+     output += '<p>Entry reference: <b class="price">'+esc(p.entry_reference)+'</b></p>';
+     output += '<p>Stop loss: <b class="price">'+esc(p.stop_loss)+'</b> · Take profit: <b class="price">'+esc(p.take_profit)+'</b></p>';
+     output += '<p>Max planned loss: <b>'+esc(p.max_planned_loss)+' (reference account currency)</b></p>';
+     output += '<p class="warn">'+esc(p.data_warning)+'</p><p>'+esc(p.ai && p.ai.summary ? p.ai.summary : '')+'</p>';
+     if(p.status === 'pending'){
+      output += '<button class="approve" data-id="'+esc(p.id)+'" data-decision="approved_for_manual_review">Approve for manual review</button>';
+      output += '<button class="reject" data-id="'+esc(p.id)+'" data-decision="rejected">Reject</button>';
+     }
+     if(p.status === 'approved_for_manual_review'){
+      output += '<p class="warn">Approved for manual review. Verify all values in Exness MT5 and place manually if still valid.</p>';
+     }
+     output += '</section>';
+    });
+    root.innerHTML = output;
+   }catch(error){showError('Could not parse proposal data: '+error.message);}
+  };
+  request.onerror = function(){showError('Could not connect to /api/proposals');};
+  request.send();
+ }
+ root.addEventListener('click',function(event){
+  var button = event.target;
+  if(!button || !button.getAttribute) return;
+  var id = button.getAttribute('data-id');
+  var decision = button.getAttribute('data-decision');
+  if(!id || !decision) return;
+  var request = new XMLHttpRequest();
+  request.open('POST','/api/decision/'+encodeURIComponent(id),true);
+  request.setRequestHeader('Content-Type','application/json');
+  request.onload = function(){
+   if(request.status < 200 || request.status >= 300){showError('Decision request failed: HTTP '+request.status);return;}
+   load();
+  };
+  request.onerror = function(){showError('Could not submit review decision');};
+  request.send(JSON.stringify({decision:decision}));
+ });
  load();
-}
-function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-async function load(){
- const root=document.getElementById('items');
- try{
-  const data=await (await fetch('/api/proposals')).json();
-  if(!data.proposals.length){root.innerHTML='<p class="muted">No proposals yet. Run the scanner in Termux.</p>';return;}
-  root.innerHTML=data.proposals.map(function(p){
-   let html='<section class="card"><div class="row"><strong>'+esc(p.market)+' · '+esc(p.side).toUpperCase()+'</strong><span>'+esc(p.status)+'</span></div>';
-   html+='<p class="muted">'+esc(p.timeframe)+' · '+esc(p.signal_bar_time)+'</p>';
-   html+='<p>Entry reference: <b class="price">'+esc(p.entry_reference)+'</b></p>';
-   html+='<p>Stop loss: <b class="price">'+esc(p.stop_loss)+'</b> · Take profit: <b class="price">'+esc(p.take_profit)+'</b></p>';
-   html+='<p>Max planned loss: <b>'+esc(p.max_planned_loss)+' (reference account currency)</b></p>';
-   html+='<p class="warn">'+esc(p.data_warning)+'</p><p>'+esc(p.ai&&p.ai.summary||'')+'</p>';
-   if(p.status==='pending'){
-    html+='<button class="approve" onclick="decide(\''+esc(p.id)+'\',\'approved_for_manual_review\')">Approve for manual review</button>';
-    html+='<button class="reject" onclick="decide(\''+esc(p.id)+'\',\'rejected\')">Reject</button>';
-   }
-   if(p.status==='approved_for_manual_review'){
-    html+='<p class="warn">Approved for manual review. Verify all values in Exness MT5 and place manually if still valid.</p>';
-   }
-   return html+'</section>';
-  }).join('');
- }catch(e){root.textContent='Dashboard error: '+e;}
-}
-load();setInterval(load,15000);
+ window.setInterval(load,15000);
+})();
 </script></main></html>"""
 
 def make_handler(state_path):
