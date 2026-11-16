@@ -3,7 +3,7 @@
   "live_enabled": false,
   "account_allowlist": [],
   "server_allowlist": [],
-  "symbols": ["EURUSD", "GBPUSD", "USDJPY", "XAUUSD", "US30", "NAS100", "BTCUSD"],
+  "symbols": ["EURUSD", "GBPUSD", "USDJPY", "XAUUSD", "US30", "NAS100", "BTCUSD", "AAPL", "TSLA"],
   "timeframe": "M15",
   "context_timeframes": ["H1", "H4"],
   "risk_per_trade": 0.02,
