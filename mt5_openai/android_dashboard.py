@@ -7,7 +7,7 @@ from .android_agent import _load_state, _save_state, set_decision
 
 PAGE = """<!doctype html>
 <html lang="en"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta charset="utf-8"><title>AI Trader — Review</title>
+<meta charset="utf-8"><title>AI Trader - Review</title>
 <style>
 body{font:16px system-ui;background:#10151d;color:#edf2f7;margin:0;padding:18px}
 main{max-width:760px;margin:auto}h1{font-size:24px}.muted{color:#9aa8b8}
