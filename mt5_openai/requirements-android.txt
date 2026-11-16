@@ -1,0 +1,2 @@
+# Android-compatible dependencies. Avoid the OpenAI SDK/jiter Rust build.
+requests>=2.31.0
