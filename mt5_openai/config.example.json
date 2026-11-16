@@ -1,0 +1,24 @@
+{
+  "execution_mode": "paper",
+  "live_enabled": false,
+  "account_allowlist": [],
+  "server_allowlist": [],
+  "symbols": ["EURUSD", "GBPUSD", "USDJPY", "XAUUSD", "US30", "NAS100", "BTCUSD"],
+  "timeframe": "M15",
+  "context_timeframes": ["H1", "H4"],
+  "risk_per_trade": 0.02,
+  "max_daily_loss_pct": 0.04,
+  "max_open_positions": 2,
+  "max_spread_points": 35,
+  "max_deviation_points": 20,
+  "magic_number": 611161,
+  "model": "gpt-4.1-mini",
+  "strategy": {
+    "ema_fast": 20,
+    "ema_slow": 50,
+    "rsi_period": 14,
+    "atr_period": 14,
+    "stop_atr_multiple": 1.5,
+    "reward_risk": 2.0
+  }
+}
