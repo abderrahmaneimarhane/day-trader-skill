@@ -8,7 +8,7 @@ skills remain unchanged.
 - OpenAI is an analysis layer only. It cannot authorize or submit orders.
 - MetaTrader 5 is the market-data and execution adapter.
 - The deterministic risk engine is the final authority.
-- The example configuration is paper-only.
+- The example configuration is paper-only. Run the one-pass scanner with `python -m mt5_openai.agent --config mt5_openai/config.json`. It reads closed M15 bars, filters candidate EMA/RSI/ATR setups with OpenAI context, checks spread and position limits, sizes through MT5, and emits paper previews. It records the maximum daily drawdown observed while the agent is running; it cannot reconstruct losses from periods when it was not running.
 - Live execution is fail-closed and requires both a config switch and an
   explicit environment arming value, plus account/server/symbol allow-lists.
 - No credentials belong in source control, JSON config, or chat.
@@ -32,6 +32,7 @@ skills remain unchanged.
 
    ```powershell
    python -m mt5_openai.diagnostics --config mt5_openai/config.json
+   python -m mt5_openai.agent --config mt5_openai/config.json
    ```
 
 ## Risk sizing
