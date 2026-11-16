@@ -98,7 +98,9 @@ def run(config):
                 entry = float(tick.ask if side == "buy" else tick.bid)
                 snapshot = {"symbol": symbol, "timeframe": config.get("timeframe", "M15"),
                             "closed_bar_count": len(rates), "last_closed_close": float(rates[-1]["close"]),
-                            "spread_points": spread, "candidate": candidate,\n                            "higher_timeframe_context": _higher_timeframe_context(\n                                adapter, symbol, config.get("context_timeframes", ["H1", "H4"]))}
+                            "spread_points": spread, "candidate": candidate,
+                            "higher_timeframe_context": _higher_timeframe_context(
+                                adapter, symbol, config.get("context_timeframes", ["H1", "H4"]))}
                 context = analyse_market(snapshot, config.get("model", "gpt-4.1-mini"))
                 if context["confidence"] < float(config.get("ai_min_confidence", 0.65)):
                     results.append({"symbol": symbol, "status": "AI_FILTER",
