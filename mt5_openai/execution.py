@@ -10,6 +10,15 @@ class ExecutionBlocked(RuntimeError):
     pass
 
 
+def _filling_type(mt5, symbol_mode):
+    """Translate SYMBOL_FILLING_* flags to ORDER_FILLING_* enum values."""
+    if symbol_mode & getattr(mt5, "SYMBOL_FILLING_IOC", 2):
+        return mt5.ORDER_FILLING_IOC
+    if symbol_mode & getattr(mt5, "SYMBOL_FILLING_FOK", 1):
+        return mt5.ORDER_FILLING_FOK
+    return mt5.ORDER_FILLING_RETURN
+
+
 def submit_market_order(mt5, config, account, symbol, side, volume, stop_loss,
                         take_profit, risk_decision, deviation=None):
     """Paper mode returns a preview. Live mode requires every independent gate."""
@@ -43,7 +52,7 @@ def submit_market_order(mt5, config, account, symbol, side, volume, stop_loss,
         "magic": int(config.get("magic_number", 611161)),
         "comment": "day-trader-skill-v2",
         "type_time": mt5.ORDER_TIME_GTC,
-        "type_filling": info.filling_mode
+        "type_filling": _filling_type(mt5, info.filling_mode)
     }
 
     mode = config.get("execution_mode", "paper")
