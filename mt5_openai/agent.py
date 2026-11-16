@@ -51,13 +51,14 @@ def run(config):
             raise RuntimeError("Cannot read open positions; fail closed")
         daily_loss = _daily_loss_guard(mt5, account, config.get("state_path", "mt5_openai/state.json"))
         active_count = len(positions)
+        pending_symbols = set()
         for symbol in config.get("symbols", []):
             try:
                 if active_count >= int(config.get("max_open_positions", 1)):
                     results.append({"symbol": symbol, "status": "SKIP",
                                     "reason": "Maximum open positions reached"})
                     continue
-                if any(p.symbol == symbol for p in positions):
+                if symbol in pending_symbols or any(p.symbol == symbol for p in positions):
                     results.append({"symbol": symbol, "status": "SKIP",
                                     "reason": "Position already open for this symbol"})
                     continue
@@ -109,6 +110,7 @@ def run(config):
                                 "risk": sizing.__dict__, "execution": outcome})
                 if outcome["status"] in ("PAPER_PREVIEW", "SUBMITTED"):
                     active_count += 1
+                    pending_symbols.add(symbol)
             except ExecutionBlocked as exc:
                 results.append({"symbol": symbol, "status": "EXECUTION_BLOCK",
                                 "reason": str(exc)})
@@ -117,7 +119,7 @@ def run(config):
                                 "reason": type(exc).__name__ + ": " + str(exc)})
         return {"account": {"login": int(account.login), "server": str(account.server),
                             "currency": str(account.currency), "equity": float(account.equity)},
-                "daily_realized_loss": daily_loss, "execution_mode": config.get("execution_mode", "paper"),
+                "max_daily_drawdown_observed": daily_loss, "execution_mode": config.get("execution_mode", "paper"),
                 "results": results}
     finally:
         adapter.shutdown()
