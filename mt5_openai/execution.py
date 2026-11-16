@@ -55,6 +55,9 @@ def submit_market_order(mt5, config, account, symbol, side, volume, stop_loss,
         "type_filling": _filling_type(mt5, info.filling_mode)
     }
 
+    checked = mt5.order_check(request)
+    if checked is None or int(checked.retcode) != 0:
+        raise ExecutionBlocked("MT5 order_check failed: " + str(checked))
     mode = config.get("execution_mode", "paper")
     if mode == "paper":
         return {"status": "PAPER_PREVIEW", "request": request,
@@ -74,9 +77,6 @@ def submit_market_order(mt5, config, account, symbol, side, volume, stop_loss,
     if not bool(getattr(account, "trade_expert", True)):
         raise ExecutionBlocked("Expert trading is disabled on this account")
 
-    checked = mt5.order_check(request)
-    if checked is None or int(checked.retcode) != 0:
-        raise ExecutionBlocked("MT5 order_check failed: " + str(checked))
     result = mt5.order_send(request)
     if result is None:
         raise ExecutionBlocked("MT5 order_send returned no result")
