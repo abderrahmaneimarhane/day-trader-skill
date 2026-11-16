@@ -21,6 +21,10 @@ an order on its own. Paper trading is the default.
 > [github.com/Jakeschincariol/trader-skill](https://github.com/Jakeschincariol/trader-skill).
 > This repo is its day-trading sequel: the Trader skill v2.
 
+## V2: OpenAI + Exness MetaTrader 5
+
+An additive integration foundation for OpenAI market analysis and Exness MT5 is available in [`mt5_openai/`](mt5_openai/README.md). It includes a closed-candle MT5 adapter, deterministic broker-based risk sizing, a structured OpenAI analyst, a guarded execution gate, and a research-only EMA/RSI/ATR baseline. The example configuration is paper-only. See its README before connecting an account.
+
 ## Install
 
 Paste this into Claude:
