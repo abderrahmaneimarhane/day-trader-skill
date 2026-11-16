@@ -7,7 +7,7 @@ import uuid
 
 from .android_market_data import fetch_closed_bars
 from .strategy import evaluate
-from .ai_analyst import analyse_market
+from .android_ai_analyst import analyse_market
 
 
 def _trend_context(symbol, interval, range_):
